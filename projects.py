@@ -40,4 +40,4 @@ def main():
         print('[Repository %s] %s' % (repo['repository']['repositoryId'], repo['repository']['name']))
 
 
-main()
+#main()
