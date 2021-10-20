@@ -7,7 +7,6 @@ import csv
 from projects import listRepositories
 
 
-
 def getCommitsGHCloud(organization, repository, providertoken):
     hasNextPage = True
     cursor = 1
@@ -19,7 +18,6 @@ def getCommitsGHCloud(organization, repository, providertoken):
     while(hasNextPage):
         url = 'https://api.github.com/repos/%s/%s/commits?per_page=1000&page=%s' % (
             organization, repository, cursor)
-        print(url)
         r = requests.get(url, headers=headers)
         if(r.status_code == 404 or r.status_code == 409):
             break
@@ -67,7 +65,7 @@ def getDeltaForCommit(baseurl, provider, organization, repository, commitsha, to
 def topPerformers(commits):
     performers = {}
     for commit in commits:
-        if('error' in commit['delta']):
+        if(commit['delta'] == {} or 'error' in commit['delta']):
             continue
         if(commit['delta']['analyzed']):
             if commit['author_id'] not in performers:
@@ -87,14 +85,14 @@ def topPerformers(commits):
             performers[commit['author_id']
                        ]['totalFixedIssues'] += commit['delta']['fixedIssues']
     return performers
-    
 
 
 def main():
     parser = argparse.ArgumentParser(description='Codacy Top Performers')
     parser.add_argument('--token', dest='token', default=None,
                         help='the api-token to be used on the REST API', required=True)
-    parser.add_argument('--provider-token', dest='providertoken', default=None, help='the provider api token to be used on the REST API', required=True)
+    parser.add_argument('--provider-token', dest='providertoken', default=None,
+                        help='the provider api token to be used on the REST API', required=True)
     parser.add_argument('--provider', dest='provider',
                         default=None, help='git provider', required=True)
     parser.add_argument('--organization', dest='organization',
@@ -108,20 +106,32 @@ def main():
     args = parser.parse_args()
     commits = []
     if(args.repository == None):
-        repos = listRepositories(args.baseurl, args.provider, args.organization, args.token)
+        repos = listRepositories(
+            args.baseurl, args.provider, args.organization, args.token)
         for repo in repos:
-            print(repo)
-            commits += getCommits(args.provider, args.organization, repo['repository']['name'], args.providertoken)
+            # print(repo)
+            tmpc = getCommits(args.provider, args.organization,
+                              repo['repository']['name'], args.providertoken)
+            for commit in tmpc:
+                commit['delta'] = getDeltaForCommit(
+                    args.baseurl, args.provider, args.organization, repo['repository']['name'], commit['sha'], args.token)
+            commits += tmpc
     else:
         commits = getCommits(args.provider, args.organization,
-                            args.repository, args.providertoken)
-    for commit in commits:
-        commit['delta'] = getDeltaForCommit(
-            args.baseurl, args.provider, args.organization, args.repository, commit['sha'], args.token)
-    print(commits)
+                             args.repository, args.providertoken)
+        for commit in commits:
+            commit['delta'] = getDeltaForCommit(
+                args.baseurl, args.provider, args.organization, args.repository, commit['sha'], args.token)
     performers = topPerformers(commits)
     if(args.output == 'json'):
         print(json.dumps(performers, indent=4))
+    elif(args.output == 'csv'):
+        with open('output.csv', 'w') as csvfile:
+            writer = csv.writer(csvfile)
+            for key, item in performers.items():
+                writer.writerow(['Introduced', item['author']] + ([i['newIssues'] for i in item['commits']]))
+                writer.writerow(['Fixed', item['author']] + ([i['fixedIssues'] for i in item['commits']]))
+            
 
 
 main()

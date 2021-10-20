@@ -33,7 +33,7 @@ Returns the numer of Lines of Code per project (overall) or over time (time) for
 ### Codacy Top Performers
 Calculates the number of introduced and fixed issues by contributor. Currently only working for GitHub cloud
 
-    usage: python3 topperformers.py [-h] --token TOKEN --provider-token PROVIDERTOKEN --provider PROVIDER --organization ORGANIZATION --repository REPOSITORY [--baseurl BASEURL]
+    usage: python3 topperformers.py [-h] --token TOKEN --provider-token PROVIDERTOKEN --provider PROVIDER --organization ORGANIZATION --repository REPOSITORY --output (json|csv) [--baseurl BASEURL] 
     
     Codacy Top Performers
     
