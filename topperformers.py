@@ -2,6 +2,9 @@
 import argparse
 import requests
 import json
+import csv
+
+from projects import listRepositories
 
 from projects import listRepositories
 
@@ -15,16 +18,17 @@ def getCommitsGHCloud(organization, repository, providertoken):
         'Authorization': 'token %s' % providertoken
     }
     while(hasNextPage):
-        url = 'https://api.github.com/repos/%s/%s/commits?per_page=100&page=%s' % (
+        url = 'https://api.github.com/repos/%s/%s/commits?per_page=1000&page=%s' % (
             organization, repository, cursor)
-        print(url)
         r = requests.get(url, headers=headers)
+        if(r.status_code == 404 or r.status_code == 409):
+            break
         response = json.loads(r.text)
         if(not response):
             hasNextPage = False
         else:
             for commit in response:
-                if(commit['author'] != None):
+                if(commit['author'] != None and ('login' in commit['author'])):
                     commits.append({
                         'sha': commit['sha'],
                         'author': commit['author']['login'],
@@ -63,6 +67,8 @@ def getDeltaForCommit(baseurl, provider, organization, repository, commitsha, to
 def topPerformers(commits):
     performers = {}
     for commit in commits:
+        if(commit['delta'] == {} or 'error' in commit['delta']):
+            continue
         if(commit['delta']['analyzed']):
             if commit['author_id'] not in performers:
                 performers[commit['author_id']] = {
@@ -80,7 +86,7 @@ def topPerformers(commits):
                        ]['totalNewIssues'] += commit['delta']['newIssues']
             performers[commit['author_id']
                        ]['totalFixedIssues'] += commit['delta']['fixedIssues']
-    print(json.dumps(performers, indent=4))
+    return performers
 
 
 def main():
@@ -94,18 +100,40 @@ def main():
     parser.add_argument('--organization', dest='organization',
                         default=None, help='organization id', required=True)
     parser.add_argument('--repository', dest='repository',
-                        default=None, help='repository id', required=True)
+                        default=None, help='repository id', required=False)
     parser.add_argument('--baseurl', dest='baseurl', default='https://app.codacy.com',
                         help='codacy server address (ignore if cloud)')
+    parser.add_argument('--output', dest='output',
+                        default='json', choices=['json', 'csv'])
     args = parser.parse_args()
-
-    commits = getCommits(args.provider, args.organization,
-                        args.repository, args.providertoken)
-    for commit in commits:
-       commit['delta'] = getDeltaForCommit(
-           args.baseurl, args.provider, args.organization, args.repository, commit['sha'], args.token)
-    print(commits)
-    topPerformers(commits)
+    commits = []
+    if(args.repository == None):
+        repos = listRepositories(
+            args.baseurl, args.provider, args.organization, args.token)
+        for repo in repos:
+            # print(repo)
+            tmpc = getCommits(args.provider, args.organization,
+                              repo['repository']['name'], args.providertoken)
+            for commit in tmpc:
+                commit['delta'] = getDeltaForCommit(
+                    args.baseurl, args.provider, args.organization, repo['repository']['name'], commit['sha'], args.token)
+            commits += tmpc
+    else:
+        commits = getCommits(args.provider, args.organization,
+                             args.repository, args.providertoken)
+        for commit in commits:
+            commit['delta'] = getDeltaForCommit(
+                args.baseurl, args.provider, args.organization, args.repository, commit['sha'], args.token)
+    performers = topPerformers(commits)
+    if(args.output == 'json'):
+        print(json.dumps(performers, indent=4))
+    elif(args.output == 'csv'):
+        with open('output.csv', 'w') as csvfile:
+            writer = csv.writer(csvfile)
+            for key, item in performers.items():
+                writer.writerow(['Introduced', item['author']] + ([i['newIssues'] for i in item['commits']]))
+                writer.writerow(['Fixed', item['author']] + ([i['fixedIssues'] for i in item['commits']]))
+            
 
 
 main()
