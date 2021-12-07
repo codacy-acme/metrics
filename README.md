@@ -7,7 +7,7 @@
 The `requirements.txt` lists all Python libraries that should be installed before running the script:
 
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 
@@ -37,7 +37,7 @@ Calculates the number of introduced and fixed issues by contributor. Currently o
     
     Codacy Top Performers
     
-    optional arguments:
+    Arguments:
     -h, --help            show this help message and exit
     --token TOKEN         the api-token to be used on the REST API
     --provider-token PROVIDERTOKEN
@@ -47,4 +47,20 @@ Calculates the number of introduced and fixed issues by contributor. Currently o
                             organization id
     --repository REPOSITORY
                             repository id
+    --baseurl BASEURL     codacy server address (ignore if cloud)
+
+
+### Codacy Org Metrics
+Lists Open PRs, Issues and Quality Gate for all repos on an org
+
+    usage: python3 orgreport.py [-h] --token TOKEN --provider PROVIDER --organization ORGANIZATION [--baseurl BASEURL]
+
+    Codacy Org Metrics
+
+    Arguments:
+    -h, --help            show this help message and exit
+    --token TOKEN         the api-token to be used on the REST API
+    --provider PROVIDER   git provider
+    --organization ORGANIZATION
+                        organization id
     --baseurl BASEURL     codacy server address (ignore if cloud)
