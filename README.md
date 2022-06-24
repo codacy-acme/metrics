@@ -64,3 +64,23 @@ Lists Open PRs, Issues and Quality Gate for all repos on an org
     --organization ORGANIZATION
                         organization id
     --baseurl BASEURL     codacy server address (ignore if cloud)
+
+
+### Codacy Forced Merges Reporter
+Lists Closed PRs with a reference if it was up to standards when being merged
+
+    usage: forcemergedprs.py [-h] --token TOKEN --provider-token PROVIDERTOKEN --provider PROVIDER --organization ORGANIZATION
+                         [--baseurl BASEURL] [--output {json,csv}]
+
+    Codacy Forced Merges Reporter
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    --token TOKEN         the api-token to be used on the REST API
+    --provider-token PROVIDERTOKEN
+                            the provider api token to be used on the REST API
+    --provider PROVIDER   git provider
+    --organization ORGANIZATION
+                            organization id
+    --baseurl BASEURL     codacy server address (ignore if cloud)
+    --output {json,csv}
