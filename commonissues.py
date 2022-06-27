@@ -30,6 +30,7 @@ def getCommitsGHCloud(organization, repository, providertoken):
             for commit in response:
                 if(commit['author'] != None and ('login' in commit['author'])):
                     commits.append({
+                        'repository': repository,
                         'date': commit['commit']['author']['date'],
                         'sha': commit['sha'],
                         'author': commit['author']['login'],
@@ -153,7 +154,7 @@ def main():
             for commit in commits:
                 for issue in commit['delta']['added']:
                     writer.writerow(
-                        [commit['date'], commit['sha'], commit['author'], issue['pattern'], issue['tool']])
+                        [commit['repository'], commit['date'], commit['sha'], commit['author'], issue['pattern'], issue['tool']])
 
 
 main()
