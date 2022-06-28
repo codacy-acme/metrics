@@ -73,7 +73,10 @@ def getDetailsForCommit(baseurl, provider, organization, repository, commitsha, 
         data = response['data']
         for issue in data:
             i = {
+                'fileExtension': issue['commitIssue']['filePath'].split('.')[-1],
                 'pattern': issue['commitIssue']['patternInfo']['title'] if 'title' in issue['commitIssue']['patternInfo'] else issue['commitIssue']['patternInfo']['id'],
+                'category': issue['commitIssue']['patternInfo']['category'],
+                'severityLevel': issue['commitIssue']['patternInfo']['severityLevel'],
                 'tool': issue['commitIssue']['toolInfo']['name']
             }
             if issue['deltaType'] == 'Added':
@@ -151,10 +154,12 @@ def main():
     elif(args.output == 'csv'):
         with open('output.csv', 'w') as csvfile:
             writer = csv.writer(csvfile)
+            writer.writerow(
+                        ['repository', 'date', 'sha', 'author', 'pattern', 'category', 'severityLevel', 'tool', 'fileExtension'])
             for commit in commits:
                 for issue in commit['delta']['added']:
                     writer.writerow(
-                        [commit['repository'], commit['date'], commit['sha'], commit['author'], issue['pattern'], issue['tool']])
+                        [commit['repository'], commit['date'], commit['sha'], commit['author'], issue['pattern'], issue['category'], issue['severityLevel'], issue['tool'], issue['fileExtension']])
 
 
 main()
